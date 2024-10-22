@@ -30,43 +30,44 @@ for i in range(1, N + 1):
     ydot[i] = ydot[i - 1] + deltat * (- y[i - 1] / r)
 
 plt.plot(x, y)
+plt.axis('equal')
 plt.xlabel('x')
 plt.ylabel('y')
 plt.title('Keppler orbits trajectory')
 
 
-#Esquema numérico RK U_n+1 = U_n + Δt / 6 * (k1 + 2 * k2 + 2 * k3 + k4) con Keppler
+#Esquema numérico RK4 U_n+1 = U_n + Δt / 6 * (k1 + 2 * k2 + 2 * k3 + k4) con Keppler
 
-for i in range(1, N + 1):
-    r = (x[i - 1] ** 2 + y[i - 1] ** 2) ** (3/2) 
+for i in range(0, N):
+    r = (x[i] ** 2 + y[i] ** 2) ** (3/2) 
 
-    k1 = xdot[i-1]
-    k2 = xdot[i-1] + k1 * deltat / 2
-    k3 = xdot[i-1] + k2 * deltat / 2
-    k4 = xdot[i-1] + k3 * deltat
+    k11 = xdot[i]
+    k12 = ydot[i]
+    k13 = - deltat * x[i] / r
+    k14 = - deltat * y[i] / r
 
-    x[i] = x[i - 1] + deltat / 6 * (k1 + 2 * k2 + 2 * k3 + k4)
+    k21 = xdot[i] + k13 * deltat / 2
+    k22 = ydot[i] + k14 * deltat / 2
+    k23 = - (x[i] + k11 * deltat / 2) / (((x[i] + k11 * deltat / 2) ** 2 + (y[i] + k12 * deltat / 2) ** 2) ** (3 / 2))
+    k24 = - (y[i] + k12 * deltat / 2) / (((x[i] + k11 * deltat / 2) ** 2 + (y[i] + k12 * deltat / 2) ** 2) ** (3 / 2))
+    
+    k31 = xdot[i] + k23 * deltat / 2
+    k32 = ydot[i] + k24 * deltat / 2
+    k33 = - (x[i] + k21 * deltat / 2) / (((x[i] + k21 * deltat / 2) ** 2 + (y[i] + k22 * deltat / 2) ** 2) ** (3 / 2))
+    k34 = - (y[i] + k22 * deltat / 2) / (((x[i] + k21 * deltat / 2) ** 2 + (y[i] + k22 * deltat / 2) ** 2) ** (3 / 2))
+    
+    k41 = xdot[i] + k33 * deltat
+    k42 = ydot[i] + k34 * deltat
+    k43 = - (x[i] + k31 * deltat) / (((x[i] + k31 * deltat) ** 2 + (y[i] + k32 * deltat) ** 2) ** (3 / 2))
+    k44 = - (y[i] + k32 * deltat) / (((x[i] + k31 * deltat) ** 2 + (y[i] + k32 * deltat) ** 2) ** (3 / 2))
 
-    k1 = ydot[i-1]
-    k2 = ydot[i-1] + k1 * deltat / 2
-    k3 = ydot[i-1] + k2 * deltat / 2
-    k4 = ydot[i-1] + k3 * deltat
+    x[i+1] = x[i] + (k11 + 2 * k21 + 2 * k31 + k41) * deltat / 6
 
-    y[i] = y[i - 1] + deltat / 6 * (k1 + 2 * k2 + 2 * k3 + k4)
+    y[i+1] = y[i] + (k12 + 2 * k22 + 2 * k32 + k42) * deltat / 6
 
-    k1 = - x[i - 1] / r
-    k2 = - (x[i - 1] + deltat / 2 * k1) / ((x[i-1] + deltat / 2 * k1) ** 2 + (y[i-1] + deltat / 2 * k1) ** 2) ** (3 / 2)
-    k3 = - (x[i - 1] + deltat / 2 * k2) / ((x[i-1] + deltat / 2 * k2) ** 2 + (y[i-1] + deltat / 2 * k2) ** 2) ** (3 / 2)
-    k4 = - (x[i - 1] + deltat * k3) / ((x[i-1] + deltat * k3) ** 2 + (y[i-1] + deltat * k3) ** 2) ** (3 / 2)
+    xdot[i+1] = xdot[i] + (k13 + 2 * k23 + 2 * k33 + k43) * deltat / 6
 
-    xdot[i] = xdot[i - 1] + deltat / 6 * (k1 + 2 * k2 + 2 * k3 + k4)
-
-    k1 = - y[i - 1] / r
-    k2 = - (y[i - 1] + deltat / 2 * k1) / ((x[i-1] + deltat / 2 * k1) ** 2 + (y[i-1] + deltat / 2 * k1) ** 2) ** (3 / 2)
-    k3 = - (y[i - 1] + deltat / 2 * k2) / ((x[i-1] + deltat / 2 * k2) ** 2 + (y[i-1] + deltat / 2 * k2) ** 2) ** (3 / 2)
-    k4 = - (y[i - 1] + deltat * k3) / ((x[i-1] + deltat * k3) ** 2 + (y[i-1] + deltat * k3) ** 2) ** (3 / 2)
-
-    ydot[i] = ydot[i - 1] + deltat / 6 * (k1 + 2 * k2 + 2 * k3 + k4)
+    ydot[i+1] = ydot[i] + (k14 + 2 * k24 + 2 * k34 + k44) * deltat / 6
 
 plt.plot(x, y)
 plt.xlabel('x')
