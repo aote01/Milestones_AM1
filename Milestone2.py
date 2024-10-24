@@ -16,14 +16,14 @@ def RK4(U, dt, t, F):
     k4 = F(U + dt * k3, t + dt)
     return U + dt / 6 * (k1 + 2 * k2 + 2 * k3 + k4)
 
-#Esquema numérico de Euler inverso U_n+1 = U_n+1 + Δt * F_n
+#Esquema numérico de Euler inverso U_n+1 = U_n + Δt * F_n+1
 
 def Euler_inverso(U, dt, t, F):
     def G(X):
-       return X - U - dt * F(U, t)   
+       return X - U - dt * F(X, t)   
     return newton(G, U)
 
-#Esquema numérico de Euler inverso U_n+1 = U_n+1 + Δt / 2 * (F_n+1 + F_n)
+#Esquema numérico de Crank Nicolson U_n+1 = U_n + Δt / 2 * (F_n+1 + F_n)
 
 def Crank_Nicolson(U, dt, t, F):
     def G(X):
