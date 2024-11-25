@@ -1,4 +1,5 @@
-from numpy import array, zeros, linspace
+from numpy import array, zeros, log10, polyfit
+from numpy.linalg import norm
 import matplotlib.pyplot as plt
 from scipy.optimize import newton
 
@@ -91,46 +92,111 @@ def particion(a, b, N):
 
 #Método de Richardson 
 
-def Cauchy_error(F, Scheme, U0, t):
+def Cauchy_error_inicial(F, Scheme, U0, t):
 
     N = len(t) - 1
     a = t[0]
     b = t[N]
-    Error = zeros((N + 1, len(U0)))
+    F_Error = zeros((N + 1, len(U0)))
     t1 = t
     t2 = particion(a, b, 2 * N)
 
     U1 = Cauchy(U0, t1, Scheme, F) 
     U2 = Cauchy(U0, t2, Scheme, F) 
+    for i in range(0, N + 1):
+        F_Error[i, :] = U2[2 * i, :] - U1[i, :]
 
-    for i in range (0, N + 1):
-        Error[i, :] = U2[2 * i, :] - U1[i, :]
+    return U1, F_Error
+
+def Cauchy_error (F, Scheme, U0, t):
+    N1 = len(t) - 1
+    U1, F_Error1 = Cauchy_error_inicial(F, Scheme, U0, t)
+    a = t[0]
+
+    b = t[len(t) - 1]
+    N2 = (len(t) -1) * 2
+    t2 = particion(a, b, N2)
+    U2, F_Error2 = Cauchy_error_inicial(F, Scheme, U0, t2)
+
+    q = - (log10(norm(F_Error2[N2, :])) - log10(norm(F_Error1[N1, :])))/(log10(N2) - log10(N1))
+
+    print(q)
+
+    Error = F_Error1/(1 - 1/(2 ** q))
 
     return U1, Error
 
+def Convergencia (U0, Scheme, F):
+    a = 0.
+    b = 10
+
+    N2 = 8000
+    N1 = 200
+
+    N_array = zeros(((N2 - N1)//300))
+    U = zeros(((N2 - N1)//300))
+
+    for N in range (N1, N2, 300):
+        t1 = particion(a, b, N)
+        t2 = particion(a, b, 2 * N)
+        
+        U1 = Cauchy(U0, t1, Scheme, F)
+        U2 = Cauchy(U0, t2, Scheme, F)
+        
+        U[(N - N1)//300] = log10(norm(U2[2 * N, :] - U1[N, :]))
+
+        N_array[(N - N1)//300] = log10(N)
+
+    y = U[U > -12]
+
+    orden, b = - polyfit(N_array[0:len(y)], y, 1)
+    
+    return U, N_array, orden
+
+
 t1 = particion(a = 0., b = 10, N = 1000)
-U1, Error = Cauchy_error(F = Oscilator, Scheme = Euler, U0 = array([1, 0]), t = t1)
 
-plt.plot(t1, U1[:, 0])
+U1, Error1 = Cauchy_error(F = Oscilator, Scheme = Euler, U0 = array([1, 0]), t = t1)
+
+U2, Error2 = Cauchy_error(F = Oscilator, Scheme = RK4, U0 = array([1, 0]), t = t1)
+
+U3, Error3 = Cauchy_error(F = Oscilator, Scheme = Euler_inverso, U0 = array([1, 0]), t = t1)
+
+U4, Error4 = Cauchy_error(F = Oscilator, Scheme = Crank_Nicolson, U0 = array([1, 0]), t = t1)
 
 
-plt.plot(t1, Error[:, 0])
+U_convergencia, N_convergencia, orden1 = Convergencia (U0 = array([1, 0]), Scheme = Euler, F = Oscilator)
 
+U_convergencia2, N_convergencia2, orden2 = Convergencia (U0 = array([1, 0]), Scheme = RK4, F = Oscilator)
+
+U_convergencia3, N_convergencia3, orden3 = Convergencia (U0 = array([1, 0]), Scheme = Euler_inverso, F = Oscilator)
+
+U_convergencia4, N_convergencia4, orden4 = Convergencia (U0 = array([1, 0]), Scheme = Crank_Nicolson, F = Oscilator)
+
+# plt.plot(t1, U1[:, 0])
+
+# plt.show()
+
+plt.plot(t1, Error1[:, 0], '-b'  , lw = 1.0, label = r"Euler")
+plt.plot(t1, Error2[:, 0] , '-r'  , lw = 1.0, label = r"RK4")
+plt.plot(t1, Error3[:, 0] , '--m' , lw = 1.0, label = r'Euler inverso')
+plt.plot(t1, Error4[:, 0] , '--c' , lw = 1.0, label = r'Crank Nicolson')
+plt.xlabel(r't')
+plt.ylabel(r'Error')
+plt.legend(loc='lower left')
+plt.title( r'Error en la integración del oscilador armónico para los diferentes esquemas temporales' )
+plt.grid()
+plt.show()
 plt.show()
 
-#a, b = 0., 1.
-#N = 5
 
-#t = linspace(a, b, N + 1)
-#print(t)
-
-#t1 = particion(a, b, N)
-#print(t1)
-
-#t2 = refinar_malla(t1)
-#print(t2)
-
-#t2 = particion(a, b, N)
-#print(t2)
-
-#
+plt.plot(N_convergencia, U_convergencia, '-b'  , lw = 1.0, label = r"{} (q={})".format(Euler.__name__, orden1))
+plt.plot(N_convergencia2, U_convergencia2 , '-r'  , lw = 1.0, label = r"{} (q={})".format(RK4.__name__, orden2) )
+plt.plot(N_convergencia3, U_convergencia3 , '--m' , lw = 1.0, label = r'{} (q={})'.format(Euler_inverso.__name__, orden3) )
+plt.plot(N_convergencia4, U_convergencia4 , '--c' , lw = 1.0, label = r'{} (q={})'.format(Crank_Nicolson.__name__, orden4) )
+plt.xlabel(r'$log_{10}(N)$')
+plt.ylabel(r'$log_{10}(U_2 - U_1)$')
+plt.legend(loc='lower left')
+plt.title( r'Ratio de convergencia para los diferentes esquemas temporales' )
+plt.grid()
+plt.show()
