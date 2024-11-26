@@ -38,6 +38,19 @@ def Crank_Nicolson(U, dt, t, F):
     
     return newton(G, U)
 
+def Leap_Frog(U, dt, t, F):
+    global U_1
+    if t==0:
+        U_1 = Euler(U, dt, t, F) 
+        return U_1   
+    else:
+        U2 = U_1 + 2*dt*F(U, t)
+        U_1 = U
+        return U2
+        
+
+    
+
 #Problema físico de Keppler
 
 def Keppler(U, t):
@@ -56,11 +69,11 @@ def Oscilator(U,t):
 def Cauchy(U0, t, Scheme, F):
 
     N = len(t)
-    U = zeros((N, len(U0)))
+    U = array(zeros((N, len(U0))))
     U[0, :] = U0
     for i in range(0, N-1):
         dt = t[i + 1] - t[i]
-        U[i + 1, :] = Scheme(U[i, :], dt, t, F)
+        U[i + 1, :] = Scheme(U[i, :], dt, t[i], F)
 
     return (U)
 
@@ -153,49 +166,26 @@ def Convergencia (U0, Scheme, F):
     
     return U, N_array, orden
 
+t1 = particion(a = 0., b = 100, N = 1000)
 
-t1 = particion(a = 0., b = 10, N = 1000)
+# U1 = Cauchy(F = Oscilator, Scheme = Euler, U0 = array([1, 0]), t = t1)
 
-U1, Error1 = Cauchy_error(F = Oscilator, Scheme = Euler, U0 = array([1, 0]), t = t1)
+U2 = Cauchy(F = Oscilator, Scheme = RK4, U0 = array([1, 0]), t = t1)
 
-U2, Error2 = Cauchy_error(F = Oscilator, Scheme = RK4, U0 = array([1, 0]), t = t1)
+U3 = Cauchy(F = Oscilator, Scheme = Euler_inverso, U0 = array([1, 0]), t = t1)
 
-U3, Error3 = Cauchy_error(F = Oscilator, Scheme = Euler_inverso, U0 = array([1, 0]), t = t1)
+U4 = Cauchy(F = Oscilator, Scheme = Crank_Nicolson, U0 = array([1, 0]), t = t1)
 
-U4, Error4 = Cauchy_error(F = Oscilator, Scheme = Crank_Nicolson, U0 = array([1, 0]), t = t1)
+U5 = Cauchy(F = Oscilator, Scheme = Leap_Frog, U0 = array([1, 0]), t = t1)
 
-
-U_convergencia, N_convergencia, orden1 = Convergencia (U0 = array([1, 0]), Scheme = Euler, F = Oscilator)
-
-U_convergencia2, N_convergencia2, orden2 = Convergencia (U0 = array([1, 0]), Scheme = RK4, F = Oscilator)
-
-U_convergencia3, N_convergencia3, orden3 = Convergencia (U0 = array([1, 0]), Scheme = Euler_inverso, F = Oscilator)
-
-U_convergencia4, N_convergencia4, orden4 = Convergencia (U0 = array([1, 0]), Scheme = Crank_Nicolson, F = Oscilator)
-
-# plt.plot(t1, U1[:, 0])
-
-# plt.show()
-
-plt.plot(t1, Error1[:, 0], '-b'  , lw = 1.0, label = r"Euler")
-plt.plot(t1, Error2[:, 0] , '-r'  , lw = 1.0, label = r"RK4")
-plt.plot(t1, Error3[:, 0] , '--m' , lw = 1.0, label = r'Euler inverso')
-plt.plot(t1, Error4[:, 0] , '--c' , lw = 1.0, label = r'Crank Nicolson')
+# plt.plot(t1, U1[:, 0], '-b'  , lw = 1.0, label = r"Euler")
+plt.plot(t1, U2[:, 0] , '-r'  , lw = 1.0, label = r"RK4")
+plt.plot(t1, U3[:, 0] , '--m' , lw = 1.0, label = r'Euler inverso')
+plt.plot(t1, U4[:, 0] , '--c' , lw = 1.0, label = r'Crank Nicolson')
+plt.plot(t1, U5[:, 0] , '-y' , lw = 1.0, label = r'Leap Frog')
 plt.xlabel(r't [s]')
-plt.ylabel(r'Error')
+plt.ylabel(r'Solución (x [m])')
 plt.legend(loc='lower left')
-plt.title( r'Error en la integración del oscilador armónico para los diferentes esquemas temporales' )
-plt.grid()
-plt.show()
-
-
-plt.plot(N_convergencia, U_convergencia, '-b'  , lw = 1.0, label = r"{} (q={})".format(Euler.__name__, orden1))
-plt.plot(N_convergencia2, U_convergencia2 , '-r'  , lw = 1.0, label = r"{} (q={})".format(RK4.__name__, orden2) )
-plt.plot(N_convergencia3, U_convergencia3 , '--m' , lw = 1.0, label = r'{} (q={})'.format(Euler_inverso.__name__, orden3) )
-plt.plot(N_convergencia4, U_convergencia4 , '--c' , lw = 1.0, label = r'{} (q={})'.format(Crank_Nicolson.__name__, orden4) )
-plt.xlabel(r'$log_{10}(N)$')
-plt.ylabel(r'$log_{10}(U_2 - U_1)$')
-plt.legend(loc='lower left')
-plt.title( r'Ratio de convergencia para los diferentes esquemas temporales' )
+plt.title( r'Solución integrada del oscilador armónico para los diferentes esquemas temporales' )
 plt.grid()
 plt.show()
